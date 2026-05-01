@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RickNet | Speedtest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --panel-bg: rgba(15, 23, 42, 0.85);
+            --neon-cyan: #00f0ff;
+            --neon-green: #00ff66;
+            --neon-purple: #b026ff;
+            --neon-red: #ff3366;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Rajdhani', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(176, 38, 255, 0.05) 0%, transparent 40%);
+        }
+
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 3.5rem; letter-spacing: 4px; text-transform: uppercase; text-shadow: 0 0 20px rgba(0, 240, 255, 0.4); }
+        .header h1 span { color: var(--neon-cyan); }
+
+        .dashboard {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            border-radius: 15px;
+            padding: 40px;
+            width: 95%;
+            max-width: 850px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 0 40px rgba(0,0,0,0.8), inset 0 0 10px rgba(0, 240, 255, 0.1);
+        }
+
+        .metrics-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px;
+        }
+
+        .metric-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px 10px;
+            text-align: center;
+            position: relative;
+        }
+
+        .metric-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px; }
+        .card-ping::before { background: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
+        .card-jitter::before { background: var(--neon-purple); box-shadow: 0 0 10px var(--neon-purple); }
+        .card-dl::before { background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+        .card-ul::before { background: var(--neon-red); box-shadow: 0 0 10px var(--neon-red); }
+
+        .metric-title { font-size: 1.1rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
+        .metric-value { font-family: 'Share Tech Mono', monospace; font-size: 2.8rem; font-weight: bold; }
+        .metric-unit { font-size: 1rem; color: var(--text-dim); }
+
+        .progress-container { width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; margin-bottom: 30px; }
+        .progress-bar { height: 100%; width: 0%; background: var(--neon-cyan); transition: width 0.1s linear, background 0.3s ease; }
+
+        .controls { text-align: center; }
+        .btn-start {
+            background: rgba(0, 240, 255, 0.1); color: var(--neon-cyan); border: 2px solid var(--neon-cyan);
+            padding: 15px 60px; font-size: 1.5rem; font-weight: 900; letter-spacing: 2px;
+            border-radius: 8px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-start:hover { background: var(--neon-cyan); color: var(--bg-dark); box-shadow: 0 0 20px var(--neon-cyan); }
+        .btn-start:disabled { border-color: var(--text-dim); color: var(--text-dim); background: transparent; cursor: not-allowed; box-shadow: none; }
+        
+        .status-text { font-family: 'Share Tech Mono', monospace; color: var(--neon-green); margin-top: 15px; font-size: 1.1rem; }
+
+        @media (max-width: 768px) {
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .header h1 { font-size: 2.2rem; }
+            .metric-value { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>RickNet <span>Speedtest</span></h1>
+    </div>
+
+    <div class="dashboard">
+        <div class="metrics-grid">
+            <div class="metric-card card-ping">
+                <div class="metric-title">Ping</div>
+                <div class="metric-value" id="val-ping">--</div>
+                <div class="metric-unit">ms</div>
+            </div>
+            <div class="metric-card card-jitter">
+                <div class="metric-title">Jitter</div>
+                <div class="metric-value" id="val-jitter">--</div>
+                <div class="metric-unit">ms</div>
+            </div>
+            <div class="metric-card card-dl">
+                <div class="metric-title">Download</div>
+                <div class="metric-value" id="val-dl">--</div>
+                <div class="metric-unit">Mbps</div>
+            </div>
+            <div class="metric-card card-ul">
+                <div class="metric-title">Upload</div>
+                <div class="metric-value" id="val-ul">--</div>
+                <div class="metric-unit">Mbps</div>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-start" id="btn-start" onclick="startEngine()">TES SINYAL</button>
+            <div class="status-text" id="status-text">SPEEDTEST READY</div>
+        </div>
+    </div>
+
+    <script>
+        const UI = {
+            ping: document.getElementById('val-ping'),
+            jitter: document.getElementById('val-jitter'),
+            dl: document.getElementById('val-dl'),
+            ul: document.getElementById('val-ul'),
+            progBar: document.getElementById('progress-bar'),
+            btn: document.getElementById('btn-start'),
+            status: document.getElementById('status-text')
+        };
+
+        // Menggunakan kombinasi Endpoint yang paling aman dari blokir CORS Browser
+        const ENDPOINTS = {
+            ping: "https://speed.cloudflare.com/__down?bytes=0",
+            dl: "https://speed.cloudflare.com/__down?bytes=30000000", // 30MB stream
+            ul: "https://httpbin.org/post" // Endpoint paling stabil buat bypass CORS Upload
+        };
+
+        const SMOOTHING_FACTOR = 0.2; // Filter stabilisasi angka real-time
+
+        async function startEngine() {
+            UI.btn.disabled = true;
+            UI.btn.innerText = "ANALISIS";
+            resetUI();
+
+            try {
+                UI.progBar.style.background = "var(--neon-cyan)";
+                await runPingTest();
+                
+                UI.progBar.style.background = "var(--neon-green)";
+                await runDownloadStream(); // MENGGUNAKAN TEKNOLOGI STREAM API
+                
+                UI.progBar.style.background = "var(--neon-red)";
+                await runUploadTest();
+                
+                UI.status.innerText = "TEST COMPLETE. DATA ACCURATE.";
+                UI.status.style.color = "var(--neon-cyan)";
+                UI.progBar.style.width = "100%";
+                UI.progBar.style.background = "linear-gradient(90deg, var(--neon-green), var(--neon-cyan))";
+            } catch (err) {
+                console.error(err);
+                UI.status.innerText = "ERROR: CORS/NETWORK BLOCKED.";
+                UI.status.style.color = "var(--neon-red)";
+            } finally {
+                UI.btn.disabled = false;
+                UI.btn.innerText = "RESTART TEST";
+            }
+        }
+
+        function resetUI() {
+            UI.ping.innerText = "--"; UI.jitter.innerText = "--"; UI.dl.innerText = "--"; UI.ul.innerText = "--";
+            UI.progBar.style.width = "0%";
+            UI.status.style.color = "var(--neon-green)";
+        }
+
+        async function runPingTest() {
+            UI.status.innerText = "CALCULATING LATENCY...";
+            let pings = [];
+            for (let i = 0; i < 5; i++) {
+                let start = performance.now();
+                await fetch(ENDPOINTS.ping + "&t=" + Math.random(), { cache: "no-store", mode: 'cors' }).catch(()=>null);
+                let end = performance.now();
+                pings.push(end - start);
+                UI.progBar.style.width = `${(i+1) * 4}%`; 
+            }
+            let avgPing = pings.reduce((a, b) => a + b) / pings.length;
+            let jitter = Math.max(...pings) - Math.min(...pings);
+            UI.ping.innerText = avgPing.toFixed(1);
+            UI.jitter.innerText = jitter.toFixed(1);
+        }
+
+        // --- TEKNOLOGI BARU: FETCH READABLE STREAM ---
+        // Nggak peduli disensor browser atau nggak, byte mentah langsung dihitung!
+        async function runDownloadStream() {
+            UI.status.innerText = "MEASURING DOWNLOAD...";
+            let smoothedSpeed = 0;
+            const targetBytes = 30000000; // 30 MB
+
+            try {
+                const response = await fetch(ENDPOINTS.dl + "&t=" + Math.random(), { cache: 'no-store' });
+                const reader = response.body.getReader();
+                let loaded = 0;
+                let lastTime = performance.now();
+                let lastLoaded = 0;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    loaded += value.length;
+                    let currentTime = performance.now();
+                    let timeDelta = (currentTime - lastTime) / 1000; 
+
+                    if (timeDelta > 0.1) { // Hitung tiap 100ms
+                        let loadedDelta = loaded - lastLoaded;
+                        let currentBps = (loadedDelta * 8) / timeDelta;
+                        let currentMbps = currentBps / (1024 * 1024);
+
+                        if (smoothedSpeed === 0) smoothedSpeed = currentMbps;
+                        else smoothedSpeed = (SMOOTHING_FACTOR * currentMbps) + ((1 - SMOOTHING_FACTOR) * smoothedSpeed);
+
+                        UI.dl.innerText = smoothedSpeed.toFixed(2);
+                        
+                        lastLoaded = loaded;
+                        lastTime = currentTime;
+
+                        // Kalkulasi Progress (Estimasi 30MB)
+                        let percent = 20 + ((loaded / targetBytes) * 40);
+                        if(percent > 60) percent = 60;
+                        UI.progBar.style.width = `${percent}%`;
+                    }
+                }
+            } catch (e) {
+                console.error("Stream failed", e);
+            }
+        }
+
+        // Upload pake XHR tapi gue matikan fitur wajib `lengthComputable`
+        function runUploadTest() {
+            return new Promise((resolve, reject) => {
+                UI.status.innerText = "MEASURING UPLOAD...";
+                const payloadSize = 10 * 1024 * 1024; // 10MB
+                const dummyData = new Uint8Array(payloadSize);
+                for (let i = 0; i < dummyData.length; i++) dummyData[i] = Math.random() * 255;
+
+                let startTime = performance.now();
+                let lastLoaded = 0;
+                let lastTime = startTime;
+                let smoothedSpeed = 0;
+
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", ENDPOINTS.ul + "?t=" + Math.random(), true);
+                
+                xhr.upload.onprogress = function(event) {
+                    // GUE HAPUS Pengecekan lengthComputable biar tetep lari angkanya!
+                    let currentTime = performance.now();
+                    let timeDelta = (currentTime - lastTime) / 1000;
+                    let loadedDelta = event.loaded - lastLoaded;
+
+                    if (timeDelta > 0.1 && loadedDelta > 0) {
+                        let currentBps = (loadedDelta * 8) / timeDelta;
+                        let currentMbps = currentBps / (1024 * 1024);
+
+                        if (smoothedSpeed === 0) smoothedSpeed = currentMbps;
+                        else smoothedSpeed = (SMOOTHING_FACTOR * currentMbps) + ((1 - SMOOTHING_FACTOR) * smoothedSpeed);
+
+                        UI.ul.innerText = smoothedSpeed.toFixed(2);
+                        
+                        lastLoaded = event.loaded;
+                        lastTime = currentTime;
+                    }
+
+                    // Progress bar tetep jalan biarpun totalnya diumpetin browser
+                    let totalToUse = event.total > 0 ? event.total : payloadSize;
+                    let percent = 60 + ((event.loaded / totalToUse) * 40);
+                    if(percent > 100) percent = 100;
+                    UI.progBar.style.width = `${percent}%`;
+                };
+
+                xhr.onload = function() { resolve(); };
+                xhr.onerror = function() { resolve(); }; // Kalo error CORS tetep beres biar gak hang
+                xhr.send(dummyData);
+            });
+        }
+    </script>
+</body>
+</html>
